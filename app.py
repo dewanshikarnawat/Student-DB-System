@@ -9,16 +9,6 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 CONNECTION_STRING = os.getenv("SQL_CONNECTION_STRING")
-# CONNECTION_STRING = (
-#     "Driver={ODBC Driver 18 for SQL Server};"
-#     "Server=tcp:studentdb-xebia1234.database.windows.net,1433;"
-#     "Database=studentdb;"
-#     "Uid=sqladmin;"
-#     "Pwd=StudentDB@2026!;"
-#     "Encrypt=yes;"
-#     "TrustServerCertificate=no;"
-#     "Connection Timeout=30;"
-# )
 
 def get_connection():
     return pyodbc.connect(CONNECTION_STRING)
