@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Student Management System</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 0 20px;
+}
+
+h1 { color: #2E4057; }
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+
+th {
+    background: #1F6AA5;
+    color: white;
+    padding: 10px;
+}
+
+td {
+    border: 1px solid #ddd;
+    padding: 8px;
+}
+
+tr:nth-child(even) {
+    background: #f0f4f8;
+}
+
+input {
+    margin: 5px;
+    padding: 8px;
+    width: 200px;
+}
+
+button {
+    padding: 8px 16px;
+    margin: 5px;
+    cursor: pointer;
+    border: none;
+    border-radius: 4px;
+}
+
+.btn-add { background: #27ae60; color: white; }
+.btn-delete { background: #e74c3c; color: white; }
+.btn-edit { background: #f39c12; color: white; }
+</style>
+
+</head>
+
+<body>
+
+<h1>Student Management System</h1>
+
+<h2>Add New Student</h2>
+<input type="text" id="firstName" placeholder="First Name">
+<input type="text" id="lastName" placeholder="Last Name">
+<input type="email" id="email" placeholder="Email">
+<input type="text" id="course" placeholder="Course">
+<button class="btn-add" onclick="addStudent()">Add Student</button>
+
+<hr>
+
+<h2>Update Student</h2>
+<input type="number" id="updateId" placeholder="Student ID">
+<input type="text" id="updateFirstName" placeholder="First Name">
+<input type="text" id="updateLastName" placeholder="Last Name">
+<input type="email" id="updateEmail" placeholder="Email">
+<input type="text" id="updateCourse" placeholder="Course">
+<button class="btn-edit" onclick="updateStudent()">Update Student</button>
+
+<hr>
+
+<h2>Search Students</h2>
+<input type="text" id="searchCourse" placeholder="Search by Course Name" onkeyup="filterStudents()">
+<button onclick="clearSearch()">Clear</button>
+
+<hr>
+
+<h2>All Students</h2>
+
+<table>
+<thead>
+<tr>
+<th>ID</th>
+<th>First Name</th>
+<th>Last Name</th>
+<th>Email</th>
+<th>Course</th>
+<th>Actions</th>
+</tr>
+</thead>
+
+<tbody id="tableBody"></tbody>
+</table>
+
+<!-- env.js -->
+<script src="env.js"></script>
+
+<script>
+
+const API = window.env?.API_URL || "http://localhost:5000";
+
+let allStudents = [];
+
+async function loadStudents() {
+    try {
+        const res = await fetch(API + '/students');
+        allStudents = await res.json();
+        renderStudents(allStudents);
+    } catch (err) {
+        console.log("Error:", err);
+    }
+}
+
+function renderStudents(students) {
+
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+
+    if (!students || students.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6">No students found</td></tr>`;
+        return;
+    }
+
+    students.forEach(s => {
+        tbody.innerHTML += `
+        <tr>
+            <td>${s.StudentID}</td>
+            <td>${s.FirstName}</td>
+            <td>${s.LastName}</td>
+            <td>${s.Email}</td>
+            <td>${s.Course || ""}</td>
+            <td>
+                <button class="btn-edit"
+                onclick="fillUpdateForm(${s.StudentID}, '${s.FirstName}', '${s.LastName}', '${s.Email}', '${s.Course}')">
+                    Edit
+                </button>
+
+                <button class="btn-delete"
+                onclick="deleteStudent(${s.StudentID})">
+                    Delete
+                </button>
+            </td>
+        </tr>`;
+    });
+}
+
+async function addStudent() {
+    const data = {
+        FirstName: firstName.value,
+        LastName: lastName.value,
+        Email: email.value,
+        Course: course.value
+    };
+
+    await fetch(API + '/students', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+
+    loadStudents();
+}
+
+function fillUpdateForm(id, fn, ln, em, co) {
+    updateId.value = id;
+    updateFirstName.value = fn;
+    updateLastName.value = ln;
+    updateEmail.value = em;
+    updateCourse.value = co;
+}
+
+async function updateStudent() {
+    await fetch(API + '/students/' + updateId.value, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            FirstName: updateFirstName.value,
+            LastName: updateLastName.value,
+            Email: updateEmail.value,
+            Course: updateCourse.value
+        })
+    });
+
+    loadStudents();
+}
+
+async function deleteStudent(id) {
+    if (confirm("Delete student?")) {
+        await fetch(API + '/students/' + id, { method: 'DELETE' });
+        loadStudents();
+    }
+}
+
+function filterStudents() {
+
+    const value = searchCourse.value.toLowerCase().trim();
+
+    if (!value) {
+        renderStudents(allStudents);
+        return;
+    }
+
+    const filtered = allStudents.filter(s =>
+        (s.Course || "").toLowerCase().includes(value)
+    );
+
+    renderStudents(filtered);
+}
+
+function clearSearch() {
+    searchCourse.value = "";
+    renderStudents(allStudents);
+}
+
+loadStudents();
+
+</script>
+
+</body>
+</html>
